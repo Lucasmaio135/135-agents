@@ -1,0 +1,39 @@
+name: Agente Marketing 135 SNEAKERS
+
+on:
+  schedule:
+    - cron: '0 10 * * 0'   # Todo domingo às 07h00 (horário de Brasília = UTC-3)
+  workflow_dispatch:         # Permite rodar manualmente pelo GitHub
+
+jobs:
+  rodar-agente:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install chromium
+          python -m playwright install-deps chromium
+
+      - name: Rodar agente de marketing
+        env:
+          WINDSOR_API_KEY:        ${{ secrets.WINDSOR_API_KEY }}
+          GOOGLE_CREDENTIALS:     ${{ secrets.GOOGLE_CREDENTIALS }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+        run: python agente_marketing.py
+
+      - name: Salvar PDF como artefato (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-135-${{ github.run_id }}
+          path: relatorio_135_*.pdf
+          retention-days: 30
