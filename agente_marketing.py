@@ -595,6 +595,25 @@ def imprimir_relatorio(metricas: dict, referencias: dict,
 # EXPORTAR PDF
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _s(texto: str) -> str:
+    """Sanitiza texto removendo caracteres fora do range Latin-1 (fpdf Helvetica)."""
+    substituicoes = {
+        "–": "-", "—": "-", "’": "'", "‘": "'",
+        "“": '"', "”": '"', "•": "*", "…": "...",
+        "→": "->", "←": "<-", "é": "e", "ã": "a",
+        "ç": "c", "õ": "o", "à": "a", "ê": "e",
+        "í": "i", "ú": "u", "ó": "o", "â": "a",
+        "ô": "o", "û": "u", "î": "i", "è": "e",
+        "ù": "u", "ä": "a", "ö": "o", "ü": "u",
+        "É": "E", "Ã": "A", "Ç": "C", "Õ": "O",
+        "À": "A", "Ê": "E", "Í": "I", "Ú": "U",
+        "Ó": "O", "Â": "A", "Ô": "O",
+    }
+    for orig, rep in substituicoes.items():
+        texto = texto.replace(orig, rep)
+    return texto.encode("latin-1", errors="ignore").decode("latin-1")
+
+
 def exportar_pdf(metricas: dict, referencias: dict,
                  tendencias: dict, calendario: list) -> str:
     from fpdf import FPDF
@@ -608,7 +627,7 @@ def exportar_pdf(metricas: dict, referencias: dict,
 
     # Cabeçalho
     pdf.set_font("Helvetica", "B", 18)
-    pdf.cell(0, 10, "135 SNEAKERS — Relatório de Marketing", ln=True, align="C")
+    pdf.cell(0, 10, "135 SNEAKERS - Relatorio de Marketing", ln=True, align="C")
     pdf.set_font("Helvetica", "", 10)
     pdf.cell(0, 6, f"Gerado em: {datetime.today().strftime('%d/%m/%Y %H:%M')}", ln=True, align="C")
     pdf.ln(6)
@@ -617,13 +636,13 @@ def exportar_pdf(metricas: dict, referencias: dict,
         pdf.set_font("Helvetica", "B", 13)
         pdf.set_fill_color(30, 30, 30)
         pdf.set_text_color(255, 255, 255)
-        pdf.cell(0, 8, f"  {titulo}", ln=True, fill=True)
+        pdf.cell(0, 8, _s(f"  {titulo}"), ln=True, fill=True)
         pdf.set_text_color(0, 0, 0)
         pdf.ln(3)
 
     def linha(texto, negrito=False):
         pdf.set_font("Helvetica", "B" if negrito else "", 10)
-        pdf.multi_cell(0, 6, texto)
+        pdf.multi_cell(0, 6, _s(str(texto)))
 
     # 1. Métricas
     secao("📊  MÉTRICAS DA SEMANA")
@@ -672,8 +691,8 @@ def exportar_pdf(metricas: dict, referencias: dict,
     for post in calendario:
         pdf.set_font("Helvetica", "B", 11)
         pdf.cell(0, 7,
-                 f"POST {post['numero']}  •  {post['dia_nome']}, "
-                 f"{post['data']}  •  {post['horario']}",
+                 _s(f"POST {post['numero']}  |  {post['dia_nome']}, "
+                    f"{post['data']}  |  {post['horario']}"),
                  ln=True)
         linha(f"Tipo: {post['tipo']}  |  {post['categoria'].upper()}")
         linha(f"Tema: {post['tema']}")
