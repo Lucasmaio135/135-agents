@@ -353,6 +353,14 @@ def gerar_calendario(metricas: dict, referencias: dict, tendencias: dict) -> lis
     # Melhor tipo baseado nos dados
     melhor    = metricas.get("melhor_tipo", "CARROSSEL")
     tendencias_lista = tendencias.get("consolidado", [])
+
+    def tendencia_hashtag(texto: str) -> str:
+        """Pega só as 3 primeiras palavras e remove caracteres especiais para hashtag."""
+        palavras = texto.split()[:3]
+        tag = "".join(p.capitalize() for p in palavras)
+        tag = "".join(c for c in tag if c.isalnum())
+        return tag[:30]  # máximo 30 chars
+
     tendencia1 = tendencias_lista[0] if tendencias_lista else "streetwear"
     tendencia2 = tendencias_lista[1] if len(tendencias_lista) > 1 else "look masculino"
 
@@ -414,7 +422,7 @@ def gerar_calendario(metricas: dict, referencias: dict, tendencias: dict) -> lis
             ),
             "hashtags": (
                 "#135store #EstiloMasculino #ReelModa #ClienteReal "
-                f"#{tendencia1.replace(' ', '')} #HugoBoss #Diesel #Osklen"
+                f"#{tendencia_hashtag(tendencia1)} #HugoBoss #Diesel #Osklen"
             ),
             "metrica_esperada": "Alcance orgânico alto | Compartilhamentos | Novos seguidores",
         },
@@ -437,7 +445,7 @@ def gerar_calendario(metricas: dict, referencias: dict, tendencias: dict) -> lis
                 "🔗 Loja física: Multiplus Shopping"
             ),
             "hashtags": (
-                f"#135store #Brasilia #SudoesteBrasilia #{tendencia2.replace(' ','')} "
+                f"#135store #Brasilia #SudoesteBrasilia #{tendencia_hashtag(tendencia2)} "
                 "#ModaMasculina #EstiloUrbano #LookMasculino #Sneakers"
             ),
             "metrica_esperada": "Engajamento local alto | Saves | Comentários de geolocalização",
@@ -641,8 +649,20 @@ def exportar_pdf(metricas: dict, referencias: dict,
         pdf.ln(3)
 
     def linha(texto, negrito=False):
+        texto_limpo = _s(str(texto))
+        # Quebra palavras muito longas inserindo espaço a cada 80 chars
+        partes = []
+        for palavra in texto_limpo.split():
+            while len(palavra) > 80:
+                partes.append(palavra[:80])
+                palavra = palavra[80:]
+            partes.append(palavra)
+        texto_limpo = " ".join(partes)
         pdf.set_font("Helvetica", "B" if negrito else "", 10)
-        pdf.multi_cell(0, 6, _s(str(texto)))
+        try:
+            pdf.multi_cell(0, 6, texto_limpo)
+        except Exception:
+            pdf.multi_cell(0, 6, texto_limpo[:200])
 
     # 1. Métricas
     secao("📊  MÉTRICAS DA SEMANA")
